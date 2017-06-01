@@ -404,3 +404,48 @@ class Raster(Service):
                 return array, metadata
         else:
             return array, metadata
+
+    def zonal_stats(
+            self,
+            inputs,
+            feature_collection,
+            mask_inputs=None,
+            bands=None,
+            scales=None,
+            data_type=None,
+            srs=None,
+            dimensions=None,
+            resolution=None,
+            bounds=None,
+            bounds_srs=None,
+            align_pixels=False,
+            resampler=None,
+            dltile=None,
+    ):
+
+        params = {
+            'keys': inputs,
+            'bands': bands,
+            'scales': scales,
+            'ot': data_type,
+            'srs': srs,
+            'resolution': resolution,
+            'outputBounds': bounds,
+            'outputBoundsSRS': bounds_srs,
+            'targetAlignedPixels': align_pixels,
+            'resampleAlg': resampler,
+            'feature_collection': feature_collection,
+            'mask_inputs': mask_inputs,
+        }
+
+        if dltile is not None:
+            if isinstance(dltile, dict):
+                params['dltile'] = dltile['properties']['key']
+            else:
+                params['dltile'] = dltile
+
+        r = self.session.post("%s/zonal_stats" % (self.url), json=params, timeout=self.TIMEOUT)
+
+        r.raise_for_status()
+
+        return r
