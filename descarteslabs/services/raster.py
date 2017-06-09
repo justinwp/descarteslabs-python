@@ -405,7 +405,7 @@ class Raster(Service):
         else:
             return array, metadata
 
-    def zonal_stats(
+    def async_zonal_stats(
             self,
             inputs,
             feature_collection,
@@ -438,14 +438,16 @@ class Raster(Service):
             'mask_inputs': mask_inputs,
         }
 
-        if dltile is not None:
-            if isinstance(dltile, dict):
-                params['dltile'] = dltile['properties']['key']
-            else:
-                params['dltile'] = dltile
-
-        r = self.session.post("%s/zonal_stats" % (self.url), json=params, timeout=self.TIMEOUT)
-
+        r = self.session.post("%s/zonal_stats_async" % (self.url), json=params)
         r.raise_for_status()
+        return r
+
+    def get_task(self, task_id):
+
+        params = {
+            'task_id': task_id
+        }
+
+        r = self.session.get("%s/get_task" % (self.url), json=params)
 
         return r

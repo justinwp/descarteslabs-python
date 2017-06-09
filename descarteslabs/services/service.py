@@ -29,6 +29,8 @@ class WrappedSession(requests.Session):
 
         if resp.status_code == 200:
             return resp
+        elif resp.status_code == 202:
+            return resp
         elif resp.status_code == 400:
             raise BadRequestError(resp.text)
         elif resp.status_code == 429:
