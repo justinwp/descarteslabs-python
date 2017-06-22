@@ -36,6 +36,33 @@ Changelog
 =========
 
 ## [Unreleased]
+### Changes
+- Major refactor of metadata.search
+  * Introduction of "Products" through dl.metadata.products()
+  * metadata entries id now concatenate the product id and the old metadata
+    keys. The original metadata keys are available through entry['key'].
+  * Additional sorting available.
+
+### Added
+- Search & Raster using DLTile Feature GeoJSON or key. Uses output bounds,
+  resolution, and srs to ease searching and rasterizing imagery over tiles.
+
+### Fixes
+- Better Error messaging
+
+## [0.3.3] - 2017-06-20
+### Added
+- DLTile notebook
+- `save` and `outfile_basename` in raster()
+
+### Fixes
+- Fix metadata.features
+
+
+## [0.3.2] - 2017-05-27
+### Fixes
+- Strict "requests" versions needed due to upstream instability.
+
 
 ## [0.3.1] - 2017-05-17
 ### Fixes
@@ -76,8 +103,10 @@ Changelog
 ### Added
 - Initial release of client library
 
-[Unreleased]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.3.1...HEAD
-[0.3.1]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.3.2...v0.3.1
+[Unreleased]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/descarteslabs/descarteslabs-python/compare/v0.2.0...v0.2.1
