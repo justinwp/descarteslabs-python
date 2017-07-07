@@ -16,3 +16,4 @@
 from .metadata import Metadata
 from .places import Places
 from .raster import Raster
+from .tasks import AsyncTasks 

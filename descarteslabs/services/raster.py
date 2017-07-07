@@ -17,11 +17,14 @@ import os
 from io import BytesIO
 import json
 import warnings
+import time
+import requests
 
 from descarteslabs.addons import numpy as np
 from descarteslabs.utilities import as_json_string
 from .service import Service
 from .places import Places
+from .tasks import AsyncTask
 import six
 
 
@@ -460,7 +463,8 @@ class Raster(Service):
 
         r = self.session.post("%s/zonal_stats_async" % (self.url), json=params)
         r.raise_for_status()
-        return r
+        t = AsyncTask(r.content)
+        return t
 
     def get_task(self, task_id):
 

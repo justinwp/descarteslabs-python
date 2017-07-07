@@ -21,7 +21,9 @@ descartes_auth = Auth()
 from .services.metadata import Metadata
 from .services.places import Places
 from .services.raster import Raster
+from .services.tasks import AsyncTasks 
 
 metadata = Metadata()
 places = Places()
 raster = Raster()
+tasks = AsyncTasks()
