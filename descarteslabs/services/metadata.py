@@ -55,22 +55,98 @@ class Metadata(Service):
             [{'product': 'landsat:LC08:PRE:TOAR', 'sat_id': 'LANDSAT_8'}]
 
         """
-        r = self.session.get('%s/sources' % self.url, timeout=self.TIMEOUT)
+        r = self.session.get('/sources')
+        return r.json()
+
+    def bands(self, products=None, limit=None, offset=None, wavelength=None, resolution=None, tags=None):
+        """Search for imagery data bands that you have access to.
+
+        :param list(str) products: A list of product(s) to return bands for.
+        :param int limit: Number of results to return.
+        :param int offset: Index to start at when returning results.
+        :param float wavelenth: A wavelength in nm e.g 700 that the band sensor must measure.
+        :param int resolution: The resolution in meters per pixel e.g 30 of the data available in this band.
+        :param list(str) tags: A list of tags that the band must have in its own tag list.
+
+
+        """
+        params = ['limit', 'offset', 'products', 'wavelength', 'resolution', 'tags']
+
+        args = locals()
+        kwargs = {
+            param: args[param]
+            for param in params
+            if args[param] is not None
+        }
+
+        r = self.session.post('/bands/search', json=kwargs)
+        return r.json()
+
+    def derived_bands(self, bands=None, limit=None, offset=None):
+        """Search for predefined derived bands that you have access to.
+
+        :param list(str) bands: A list of source bands that must be part of
+                                the derived band i.e ["nir"]
+        :param int limit: Number of results to return.
+        :param int offset: Index to start at when returning results.
+        """
+        params = ['bands', 'limit', 'offset']
+
+        args = locals()
+        kwargs = {
+            param: args[param]
+            for param in params
+            if args[param] is not None
+        }
+
+        r = self.session.post('/bands/derived/search', json=kwargs)
+        return r.json()
+
+    def products(self, bands=None, limit=None, offset=None):
+        """Search products that are available on the platform.
+
+        :param list(str) bands: Band name(s) e.g ["red", "nir"] to filter products by.
+                                Note that products must match all bands that are passed.
+        :param int limit: Number of results to return.
+        :param int offset: Index to start at when returning results.
+
+        """
+        params = ['limit', 'offset', 'bands']
+
+        args = locals()
+        kwargs = {
+            param: args[param]
+            for param in params
+            if args[param] is not None
+        }
+
+        r = self.session.post('/products/search', json=kwargs)
 
         return r.json()
 
-    def products(self):
+    def available_products(self):
         """Get the list of product identifiers you have access to.
 
         Example::
             >>> import descarteslabs as dl
             >>> from pprint import pprint
-            >>> products = dl.metadata.products()
+            >>> products = dl.metadata.available_products()
             >>> pprint(products)
             ['landsat:LC08:PRE:TOAR']
 
         """
-        r = self.session.get('%s/products' % self.url, timeout=self.TIMEOUT)
+        r = self.session.get('/products')
+
+        return r.json()
+
+    def translate(self, const_id):
+        """Translate a deprecated constellation identifier
+        into a new-style product identifier.
+
+        :param string const_id: The constellation identifier to translate.
+        """
+
+        r = self.session.get('/products/translate/{}'.format(const_id))
 
         return r.json()
 
@@ -131,14 +207,12 @@ class Metadata(Service):
         kwargs = {}
 
         if sat_id:
-
             if isinstance(sat_id, string_types):
                 sat_id = [sat_id]
 
             kwargs['sat_id'] = sat_id
 
         if products:
-
             if isinstance(products, string_types):
                 products = [products]
 
@@ -181,8 +255,7 @@ class Metadata(Service):
         if params:
             kwargs['params'] = json.dumps(params)
 
-        r = self.session.post('%s/summary' % self.url, json=kwargs, timeout=self.TIMEOUT)
-
+        r = self.session.post('/summary', json=kwargs)
         return r.json()
 
     def search(self, products=None, const_id=None, sat_id=None, date='acquired', place=None,
@@ -190,7 +263,8 @@ class Metadata(Service):
                cloud_fraction_0=None, fill_fraction=None, params=None,
                limit=100, offset=0, fields=None, dltile=None, sort_field=None, sort_order="asc"):
         """Search metadata given a spatio-temporal query. All parameters are
-        optional. Results are paged using limit/offset.
+        optional. Results are paged using limit and offset. Please note offset
+        plus limit cannot exceed 10000.
 
         :param list(str) products: Product Identifier(s).
         :param list(str) const_id: Constellation Identifier(s).
@@ -204,7 +278,7 @@ class Metadata(Service):
         :param float cloud_fraction_0: Maximum cloud fraction, calculated by cloud mask pixels.
         :param float fill_fraction: Minimum scene fill fraction, calculated as valid/total pixels.
         :param str params: JSON of additional query parameters.
-        :param int limit: Number of items to return.
+        :param int limit: Number of items to return. (max of 10000)
         :param int offset: Number of items to skip.
         :param list(str) fields: Properties to return.
         :param str dltile: a dltile key used to specify the resolution, bounds, and srs.
@@ -238,10 +312,7 @@ class Metadata(Service):
         if isinstance(geom, dict):
             geom = json.dumps(geom)
 
-        kwargs = {}
-
-        kwargs['limit'] = limit
-        kwargs['offset'] = offset
+        kwargs = {'date': date, 'limit': limit, 'offset': offset}
 
         if sat_id:
 
@@ -293,10 +364,9 @@ class Metadata(Service):
             kwargs['sort_field'] = sort_field
 
             if sort_order is not None:
-                assert sort_order in ['asc', 'desc'], "invalid sort_order, %s not in ['asc', 'desc']" % sort_order
                 kwargs['sort_order'] = sort_order
 
-        r = self.session.post('%s/search' % self.url, json=kwargs, timeout=self.TIMEOUT)
+        r = self.session.post('/search', json=kwargs)
 
         return {'type': 'FeatureCollection', "features": r.json()}
 
@@ -418,11 +488,9 @@ class Metadata(Service):
                                params=params, dltile=dltile)
 
         offset = 0
-
         count = summary['count']
 
         while offset < count:
-
             features = self.search(sat_id=sat_id, products=products, const_id=None,
                                    date=date, place=place, geom=geom,
                                    start_time=start_time, end_time=end_time,
@@ -457,6 +525,32 @@ class Metadata(Service):
              'sat_id', 'solar_azimuth_angle', 'solar_elevation_angle', 'sw_version', 'terrain_correction',
              'tile_id']
         """
-        r = self.session.get('%s/get/%s' % (self.url, key), timeout=self.TIMEOUT)
+        r = self.session.get('/get/%s' % key)
+        return r.json()
 
+    def get_product(self, product_id):
+        """Get information about a single product.
+
+        :param str product_id: Product Identifier.
+
+        """
+        r = self.session.get('/products/%s' % product_id)
+        return r.json()
+
+    def get_band(self, band_id):
+        """Get information about a single product.
+
+        :param str band_id: Band Identifier.
+
+        """
+        r = self.session.get('/bands/%s' % band_id)
+        return r.json()
+
+    def get_derived_band(self, derived_band_id):
+        """Get information about a single product.
+
+        :param str derived_band_id: Derived band identifier.
+
+        """
+        r = self.session.get('/bands/derived/%s' % derived_band_id)
         return r.json()

@@ -56,9 +56,11 @@ def do_setup():
     kwargs['version'] = version
     kwargs['packages'] = find_packages('.')
     kwargs['package_data'] = {'descarteslabs.services': ['gd_bundle-g2-g1.crt']}
-    kwargs['scripts'] = [
-        'descarteslabs/scripts/descarteslabs',
-    ]
+    kwargs['entry_points'] = {
+        'console_scripts': [
+            'descarteslabs = descarteslabs.scripts.__main__:main'
+        ]
+    }
     kwargs['install_requires'] = [
         "cachetools",
         "six"
@@ -66,9 +68,9 @@ def do_setup():
 
     # Python < 2.7.9 needs requests[security] to avoid SSL issues
     if sys.version_info[0:3] >= (2, 7, 9):
-        kwargs["install_requires"].append('requests>=2.11.1,<=2.14.2')
+        kwargs["install_requires"].append('requests>=2.16.0')
     else:
-        kwargs["install_requires"].append('requests[security]>=2.11.1,<=2.14.2')
+        kwargs["install_requires"].append('requests[security]>=2.16.0')
 
     kwargs['license'] = 'Apache 2.0',
     kwargs['zip_safe'] = False

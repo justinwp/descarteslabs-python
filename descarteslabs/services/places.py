@@ -42,10 +42,9 @@ class Places(Service):
             >>> import descarteslabs as dl
             >>> dl.places.placetypes()
             ['continent', 'country', 'dependency', 'macroregion', 'region',
-                'district', 'mesoregion', 'microregion', 'county']
+                'district', 'mesoregion', 'microregion', 'county', 'locality']
         """
-        r = self.session.get('%s/placetypes' % self.url, timeout=self.TIMEOUT)
-
+        r = self.session.get('/placetypes')
         return r.json()
 
     @cachedmethod(operator.attrgetter('cache'), key=partial(hashkey, 'find'))
@@ -60,16 +59,15 @@ class Places(Service):
             >>> import descarteslabs as dl
             >>> from pprint import pprint
             >>> results = dl.places.find('morocco')
+            >>> _ = results[0].pop('bbox')
             >>> pprint(results)
-            [{'bbox': [-17.013743, 21.419971, -1.031999, 35.926519],
-              'id': 85632693,
+            [{'id': 85632693,
               'name': 'Morocco',
               'path': 'continent:africa_country:morocco',
               'placetype': 'country',
               'slug': 'africa_morocco'}]
         """
-        r = self.session.get('%s/find/%s' % (self.url, path), params=kwargs, timeout=self.TIMEOUT)
-
+        r = self.session.get('/find/%s' % path, params=kwargs)
         return r.json()
 
     @cachedmethod(operator.attrgetter('cache'), key=partial(hashkey, 'shape'))
@@ -100,8 +98,7 @@ class Places(Service):
              'slug': 'north-america_united-states_kansas'}
 
         """
-        r = self.session.get('%s/shape/%s.%s' % (self.url, slug, output), params={'geom': geom}, timeout=self.TIMEOUT)
-
+        r = self.session.get('/shape/%s.%s' % (slug, output), params={'geom': geom})
         return r.json()
 
     @cachedmethod(operator.attrgetter('cache'), key=partial(hashkey, 'prefix'))
@@ -126,7 +123,6 @@ class Places(Service):
         if placetype:
             params['placetype'] = placetype
         params['geom'] = geom
-        r = self.session.get('%s/prefix/%s.%s' % (self.url, slug, output),
-                             params=params, timeout=self.TIMEOUT)
+        r = self.session.get('/prefix/%s.%s' % (slug, output), params=params)
 
         return r.json()

@@ -12,20 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
 import os
+import random
 
 import requests
-from requests.packages.urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-from descarteslabs import descartes_auth
-from descarteslabs.exceptions import ServerError, BadRequestError, NotFoundError, RateLimitError
+import descarteslabs
+from ..exceptions import ServerError, BadRequestError, NotFoundError, RateLimitError, GatewayTimeoutError
 
 
 class WrappedSession(requests.Session):
+    def __init__(self, base_url, timeout=None):
+        self.base_url = base_url
+        self.timeout = timeout
+        super(WrappedSession, self).__init__()
+
     def request(self, method, url, **kwargs):
-        resp = super(WrappedSession, self).request(method, url, **kwargs)
+        if self.timeout and 'timeout' not in kwargs:
+            kwargs['timeout'] = self.timeout
+
+        resp = super(WrappedSession, self).request(method, self.base_url + url, **kwargs)
 
         if resp.status_code == 200:
             return resp
@@ -37,6 +45,10 @@ class WrappedSession(requests.Session):
             raise NotFoundError("404 %s %s" % (method, url))
         elif resp.status_code == 429:
             raise RateLimitError(resp.text)
+        elif resp.status_code == 504:
+            raise GatewayTimeoutError(
+                "Your request timed out on the server. "
+                "Consider reducing the complexity of your request.")
         else:
             raise ServerError(resp.text)
 
@@ -45,10 +57,13 @@ class Service:
     TIMEOUT = (9.5, 30)
 
     def __init__(self, url, token):
-        self.auth = descartes_auth
-        self.url = url
+        self.auth = descarteslabs.descartes_auth
+        self.base_url = url
         if token:
             self.auth._token = token
+
+        self.current_session = None
+        self.session_token = None
 
     @property
     def token(self):
@@ -60,8 +75,17 @@ class Service:
 
     @property
     def session(self):
+        if self.session_token != self.token:
+            self.current_session = None
 
-        s = WrappedSession()
+        if not self.current_session:
+            self.current_session = self.build_session()
+            self.session_token = self.token
+
+        return self.current_session
+
+    def build_session(self):
+        s = WrappedSession(self.base_url, timeout=self.TIMEOUT)
 
         retries = Retry(total=5,
                         read=2,
@@ -70,12 +94,15 @@ class Service:
                             'HEAD', 'TRACE', 'GET', 'POST',
                             'PUT', 'OPTIONS', 'DELETE'
                         ]),
-                        status_forcelist=[429, 500, 502, 503, 504])
+                        status_forcelist=[429, 500, 502, 503])
 
         s.mount('https://', HTTPAdapter(max_retries=retries))
 
-        s.headers.update({"Authorization": self.token})
-        s.headers.update({"content-type": "application/json"})
+        s.headers.update({
+            "Authorization": self.token,
+            "Content-Type": "application/json",
+            "User-Agent": "dl-python/{}".format(descarteslabs.__version__)
+        })
 
         here = os.path.dirname(__file__)
 

@@ -50,10 +50,7 @@ class Raster(Service):
 
         :return: A dictionary of band entries and their metadata.
         """
-        r = self.session.get('%s/bands/key/%s' % (self.url, key), timeout=self.TIMEOUT)
-
-        if r.status_code != 200:
-            raise RuntimeError("%s: %s" % (r.status_code, r.text))
+        r = self.session.get('/bands/key/%s' % key)
 
         return r.json()
 
@@ -65,12 +62,7 @@ class Raster(Service):
 
         :return: A dictionary of band entries and their metadata.
         """
-        r = self.session.get('%s/bands/constellation/%s' % (self.url, const),
-                             timeout=self.TIMEOUT)
-
-        if r.status_code != 200:
-            raise RuntimeError("%s: %s" % (r.status_code, r.text))
-
+        r = self.session.get('/bands/constellation/%s' % const)
         return r.json()
 
     def dltiles_from_shape(self, resolution, tilesize, pad, shape):
@@ -120,12 +112,7 @@ class Raster(Service):
             'shape': shape,
         }
 
-        r = self.session.post('%s/dlkeys/from_shape' % (self.url),
-                              json=params, timeout=self.TIMEOUT)
-
-        if r.status_code != 200:
-            raise RuntimeError("%s: %s" % (r.status_code, r.text))
-
+        r = self.session.post('/dlkeys/from_shape', json=params)
         return r.json()
 
     def dltile_from_latlon(self, lat, lon, resolution, tilesize, pad):
@@ -168,8 +155,7 @@ class Raster(Service):
             'pad': pad,
         }
 
-        r = self.session.get('%s/dlkeys/from_latlon/%f/%f' % (self.url, lat, lon),
-                             params=params, timeout=self.TIMEOUT)
+        r = self.session.get('/dlkeys/from_latlon/%f/%f' % (lat, lon), params=params)
 
         return r.json()
 
@@ -204,7 +190,7 @@ class Raster(Service):
              'type': 'Feature'}
         """
 
-        r = self.session.get('%s/dlkeys/%s' % (self.url, key), timeout=self.TIMEOUT)
+        r = self.session.get('/dlkeys/%s' % key)
 
         return r.json()
 
@@ -312,10 +298,7 @@ class Raster(Service):
             else:
                 params['dltile'] = dltile
 
-        r = self.session.post('%s/raster' % (self.url), json=params, timeout=self.TIMEOUT)
-
-        if r.status_code != 200:
-            raise RuntimeError("%s: %s" % (r.status_code, r.text))
+        r = self.session.post('/raster', json=params)
 
         json_resp = r.json()
         # Decode base64
@@ -413,7 +396,7 @@ class Raster(Service):
             else:
                 params['dltile'] = dltile
 
-        r = self.session.post('%s/npz' % (self.url), json=params, timeout=self.TIMEOUT)
+        r = self.session.post('/npz', json=params)
 
         io = BytesIO(r.content)
         npz = np.load(io)
