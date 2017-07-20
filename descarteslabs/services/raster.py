@@ -433,6 +433,7 @@ class Raster(Service):
             inputs,
             feature_collection,
             mask_inputs=None,
+            mask_value=None,
             bands=None,
             scales=None,
             data_type=None,
@@ -443,8 +444,39 @@ class Raster(Service):
             bounds_srs=None,
             align_pixels=False,
             resampler=None,
-            dltile=None,
+            functions=None,
     ):
+        """Calculate zonal statistics of imagery.
+
+        :param inputs: List of :class:`Metadata` identifiers.
+        :param feature_collection: GeoJSON Dictionary of a FeatureCollection that specifies
+            the shapes over which to calculate statistics
+        :param mask_inputs: List of :class:`Metadata` identifiers to be used to mask imagery
+            at the pixel level prior to calculating statistics. Default: None
+        :param mask_value: Value associated with mask inputs to create boolean mask where pixel_value
+            equal to the mask_value specified a valid pixel. Default: 1
+        :param bands: List of requested bands.
+        :param scales: List of tuples specifying the scaling to be applied to each band.
+            If no scaling is desired for a band, use ``None`` where appropriate. If a
+            tuple contains four elements, the last two will be used as the output range.
+            For example, ``(0, 10000, 0, 128)`` would scale the source values 0-10000 to
+            be returned as 0-128 in the output.
+        :param str data_type: Output data type (`Byte`, `UInt8`, `UInt16`, `Float32`, etc).
+        :param str srs: Output spatial reference system definition understood by GDAL.
+        :param float resolution: Desired resolution in output SRS units. Incompatible with
+            `dimensions`
+        :param tuple dimensions: Desired output (width, height) in pixels. Incompatible with
+            `resolution`
+        :param tuple bounds: ``(min_x, min_y, max_x, max_y)`` in target SRS.
+        :param str bounds_srs: Override the coordinate system in which bounds are expressed.
+        :param bool align_pixels: Align pixels to the target coordinate system.
+        :param str resampler: Resampling algorithm to be used during warping (``near``,
+            ``bilinear``, ``cubic``, ``cubicsplice``, ``lanczos``, ``average``, ``mode``,
+            ``max``, ``min``, ``med``, ``q1``, ``q3``).
+        :param functions: Numpy functions to apply to the resulting valid pixels. Default of None
+            will run ['min, 'max', 'mean', 'median', 'std']
+
+        """
 
         params = {
             'keys': inputs,
@@ -459,19 +491,11 @@ class Raster(Service):
             'resampleAlg': resampler,
             'feature_collection': feature_collection,
             'mask_inputs': mask_inputs,
+            'mask_value': mask_value,
+            'functions': functions,
         }
 
         r = self.session.post("%s/zonal_stats_async" % (self.url), json=params)
         r.raise_for_status()
         t = AsyncTask(r.content)
         return t
-
-    def get_task(self, task_id):
-
-        params = {
-            'task_id': task_id
-        }
-
-        r = self.session.get("%s/get_task" % (self.url), json=params)
-
-        return r
