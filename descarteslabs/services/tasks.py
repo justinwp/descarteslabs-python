@@ -10,7 +10,7 @@ class AsyncTask(dict):
 class AsyncTasks(Service):
     def __init__(self, url=None, token=None):
         if url is None:
-            url = os.environ.get("DESCARTESLABS_TASKS_URL", "https://platform-services.descarteslabs.com/raster/dev")
+            url = os.environ.get("DESCARTESLABS_TASKS_URL", "https://platform-services.descarteslabs.com/raster/v1")
 
         Service.__init__(self, url, token)
 
