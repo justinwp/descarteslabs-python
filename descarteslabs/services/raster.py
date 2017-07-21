@@ -478,7 +478,7 @@ class Raster(Service):
             'functions': functions,
         }
 
-        r = self.session.post("%s/zonal_stats_async" % (self.url), json=params)
+        r = self.session.post("/zonal_stats_async", json=params)
         r.raise_for_status()
         t = AsyncTask(r.content)
         return t
