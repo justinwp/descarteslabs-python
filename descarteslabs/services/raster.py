@@ -17,8 +17,6 @@ import os
 from io import BytesIO
 import json
 import warnings
-import time
-import requests
 
 from descarteslabs.addons import numpy as np
 from descarteslabs.utilities import as_json_string

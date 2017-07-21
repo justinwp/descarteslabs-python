@@ -3,9 +3,11 @@ import requests
 import time
 from .service import Service
 
+
 class AsyncTask(dict):
     def __init__(self, task_id=None):
         self.task_id = task_id
+
 
 class AsyncTasks(Service):
     def __init__(self, url=None, token=None):
