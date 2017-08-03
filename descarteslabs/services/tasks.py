@@ -23,7 +23,7 @@ class AsyncTasks(Service):
         params = {
             'task_id': task.task_id
         }
-        r = self.session.get("/get_task", json=params)
+        r = self.session.get("/get_task", params=params)
         return r
 
     def collect(self, tasks):
