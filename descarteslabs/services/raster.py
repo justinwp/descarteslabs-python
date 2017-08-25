@@ -306,7 +306,6 @@ class Raster(Service):
             'outsize': dimensions,
             'targetAlignedPixels': align_pixels,
             'resampleAlg': resampler,
-            'blosc': can_blosc
         }
 
         if dltile is not None:
@@ -317,44 +316,28 @@ class Raster(Service):
 
         r = self.session.post('/raster', json=params)
 
-        if can_blosc:
-            raw = BytesIO(r.content)
+        raw = BytesIO(r.content)
 
-            json_resp = json.loads(raw.readline().decode('utf-8').strip())
+        json_resp = json.loads(raw.readline().decode('utf-8').strip())
 
-            num_files = json_resp['files']
-            json_resp['files'] = {}
+        num_files = json_resp['files']
+        json_resp['files'] = {}
 
-            for _ in range(num_files):
-                file_meta = json.loads(raw.readline().decode('utf-8').strip())
-                data = read_blosc_string(file_meta, raw)
+        for _ in range(num_files):
+            file_meta = json.loads(raw.readline().decode('utf-8').strip())
 
-                fn = file_meta['filename']
+            fn = file_meta['name']
+            data = raw.read(file_meta['length'])
 
-                if outfile_basename:
-                    outfilename = "{}.{}".format(
-                        outfile_basename,
-                        ".".join(os.path.basename(fn).split(".")[1:])
-                    )
-                else:
-                    outfilename = fn
-
-                json_resp['files'][outfilename] = data
-        else:
-            json_resp = r.json()
-
-            # Decode base64
-            for fn in list(json_resp['files'].keys()):
-                if outfile_basename:
-                    outfilename = "{}.{}".format(
-                        outfile_basename,
-                        ".".join(os.path.basename(fn).split(".")[1:])
-                    )
-                else:
-                    outfilename = fn
-                json_resp['files'][outfilename] = base64.b64decode(
-                    json_resp['files'].pop(fn)
+            if outfile_basename:
+                outfilename = "{}.{}".format(
+                    outfile_basename,
+                    ".".join(os.path.basename(fn).split(".")[1:])
                 )
+            else:
+                outfilename = fn
+
+            json_resp['files'][outfilename] = data
 
         if save:
             for filename, data in six.iteritems(json_resp['files']):
@@ -438,7 +421,6 @@ class Raster(Service):
             'outsize': dimensions,
             'targetAlignedPixels': align_pixels,
             'resampleAlg': resampler,
-            'blosc': can_blosc
         }
 
         if dltile is not None:
@@ -446,6 +428,13 @@ class Raster(Service):
                 params['dltile'] = dltile['properties']['key']
             else:
                 params['dltile'] = dltile
+
+        can_blosc = not isinstance(blosc, ThirdParty)
+
+        if can_blosc:
+            params['of'] = 'blosc'
+        else:
+            params['of'] = 'npz'
 
         r = self.session.post('/npz', json=params, stream=True)
 
