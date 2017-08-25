@@ -447,7 +447,7 @@ class Raster(Service):
             else:
                 params['dltile'] = dltile
 
-        r = self.session.post('/npz', json=params, stream=True))
+        r = self.session.post('/npz', json=params, stream=True)
 
         if can_blosc:
             metadata = json.loads(r.raw.readline().decode('utf-8').strip())
