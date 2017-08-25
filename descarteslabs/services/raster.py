@@ -44,7 +44,7 @@ class Raster(Service):
         """
         warnings.simplefilter('always', DeprecationWarning)
         if url is None:
-            url = os.environ.get("DESCARTESLABS_RASTER_URL", "https://platform-services.descarteslabs.com/raster/v1")
+            url = os.environ.get("DESCARTESLABS_RASTER_URL", "https://platform-services.descarteslabs.com/raster/v2")
 
         Service.__init__(self, url, token, auth)
 
