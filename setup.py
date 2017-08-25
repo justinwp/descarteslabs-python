@@ -54,7 +54,8 @@ def do_setup():
     ]
     kwargs['classifiers'] = clssfrs
     kwargs['version'] = version
-    kwargs['packages'] = find_packages('.')
+    kwargs['packages'] = find_packages('.') + \
+        ['descarteslabs.ext']
     kwargs['package_data'] = {'descarteslabs.services': ['gd_bundle-g2-g1.crt']}
     kwargs['entry_points'] = {
         'console_scripts': [

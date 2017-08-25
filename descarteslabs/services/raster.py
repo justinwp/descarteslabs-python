@@ -18,6 +18,7 @@ from io import BytesIO
 import json
 import warnings
 
+import descarteslabs
 from descarteslabs.addons import numpy as np
 from descarteslabs.utilities import as_json_string
 from .service import Service
@@ -26,19 +27,26 @@ from .tasks import AsyncTask
 import six
 
 
+RASTER_BANDS_WARNING = """
+Band retrieval through the raster service is deprecated, and will be
+removed eventually. Use the corresponding methods on the metadata
+service instead."""
+
+
 class Raster(Service):
     """Raster"""
     TIMEOUT = (9.5, 300)
 
-    def __init__(self, url=None, token=None):
+    def __init__(self, url=None, token=None, auth=descarteslabs.descartes_auth):
         """The parent Service class implements authentication and exponential
         backoff/retry. Override the url parameter to use a different instance
         of the backing service.
         """
+        warnings.simplefilter('always', DeprecationWarning)
         if url is None:
             url = os.environ.get("DESCARTESLABS_RASTER_URL", "https://platform-services.descarteslabs.com/raster/v1")
 
-        Service.__init__(self, url, token)
+        Service.__init__(self, url, token, auth)
 
     def get_bands_by_key(self, key):
         """
@@ -48,6 +56,7 @@ class Raster(Service):
 
         :return: A dictionary of band entries and their metadata.
         """
+        warnings.warn(RASTER_BANDS_WARNING, DeprecationWarning)
         r = self.session.get('/bands/key/%s' % key)
 
         return r.json()
@@ -60,6 +69,7 @@ class Raster(Service):
 
         :return: A dictionary of band entries and their metadata.
         """
+        warnings.warn(RASTER_BANDS_WARNING, DeprecationWarning)
         r = self.session.get('/bands/constellation/%s' % const)
         return r.json()
 
@@ -240,7 +250,13 @@ class Raster(Service):
         retrieve a translated and warped mosaic.
 
         :param inputs: List of :class:`Metadata` identifiers.
-        :param bands: List of requested bands.
+        :param bands: List of requested bands. If the last item in the list is an alpha
+            band (with data range `[0, 1]`) it affects rastering of all other bands:
+            When rastering multiple images, they are combined image-by-image only where
+            each respective image's alpha band is `1` (pixels where the alpha band is not
+            `1` are "transparent" in the overlap between images). If a pixel is fully
+            masked considering all combined alpha bands it will be `0` in all non-alpha
+            bands.
         :param scales: List of tuples specifying the scaling to be applied to each band.
             If no scaling is desired for a band, use ``None`` where appropriate. If a
             tuple contains four elements, the last two will be used as the output range.
@@ -340,7 +356,13 @@ class Raster(Service):
         """Retrieve a raster as a NumPy array.
 
         :param inputs: List of :class:`Metadata` identifiers.
-        :param bands: List of requested bands.
+        :param bands: List of requested bands. If the last item in the list is an alpha
+            band (with data range `[0, 1]`) it affects rastering of all other bands:
+            When rastering multiple images, they are combined image-by-image only where
+            each respective image's alpha band is `1` (pixels where the alpha band is not
+            `1` are "transparent" in the overlap between images). If a pixel is fully
+            masked considering all combined alpha bands it will be `0` in all non-alpha
+            bands.
         :param scales: List of tuples specifying the scaling to be applied to each band.
             If no scaling is desired for a band, use ``None`` where appropriate. If a
             tuple contains four elements, the last two will be used as the output range.
