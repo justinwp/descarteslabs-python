@@ -1,6 +1,7 @@
 import os
 import requests
 import time
+import descarteslabs
 from .service import Service
 import warnings
 
