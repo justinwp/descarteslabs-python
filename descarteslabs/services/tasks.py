@@ -23,7 +23,6 @@ class AsyncTasks(Service):
 
         Service.__init__(self, url, token, auth)
 
-
     def get_task(self, task):
         if not isinstance(task, AsyncTask):
             raise ValueError("`task` {} argument is not of type `AsyncTask`".format(task))
