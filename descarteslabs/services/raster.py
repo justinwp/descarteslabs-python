@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
 import os
 from io import BytesIO
 import json
@@ -20,7 +19,7 @@ import warnings
 
 import descarteslabs
 from descarteslabs.addons import ThirdParty, blosc, numpy as np
-from descarteslabs.utilities import as_json_string, read_blosc_array, read_blosc_string
+from descarteslabs.utilities import as_json_string, read_blosc_array
 from .service import Service
 from .places import Places
 from .tasks import AsyncTask
@@ -289,8 +288,6 @@ class Raster(Service):
             places.auth = self.auth
             shape = places.shape(place, geom='low')
             cutline = json.dumps(shape['geometry'])
-
-        can_blosc = not isinstance(blosc, ThirdParty)
 
         params = {
             'keys': inputs,
