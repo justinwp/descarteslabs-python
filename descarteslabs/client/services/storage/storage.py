@@ -143,21 +143,6 @@ class Storage(Service):
             for item in r.json():
                 yield item
 
-    def save_geotiff(self, arr, meta):
-        pass
-
-    def mount(self, target):
-        try:
-            os.symlink(
-                "/festivus/dl-platform-test-cache/%s" % sha1(
-                    self.auth.payload['sub'].encode("utf-8")).hexdigest(),
-                target
-            )
-        except Exception as e:
-            print('Failed to mount')
-            print(e)
-            pass
-
     def copy_from_bucket(self, src_bucket_name, src, dest, user_ns=None, storage_type='data'):
         """Copy a file from a google cloud storage bucket to your descartes
         data bucket. This requires that the dlstorage service account have
