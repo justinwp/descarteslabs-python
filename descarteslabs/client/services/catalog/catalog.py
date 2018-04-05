@@ -9,8 +9,20 @@ from descarteslabs.client.services.service import Service, ThirdPartyService
 
 
 class Catalog(Service):
+    """The Descartes Labs (DL) Catalog allows you to add georeferenced raster products
+    into the Descartes Labs Platform. Catalog products can be used in other DL services
+    like Raster and Tasks and Metadata.
+
+    The entrypoint for using catalog is creating a Product using :meth:`Catalog.add_product`.
+    After creating a product you should add band(s) to it using :meth:`Catalog.add_band`, and
+    upload imagery using :meth:`Catalog.upload_image`.
+
+    Bands define where and how data is encoded into imagery files, and how it should be displayed.
+    Images define metadata about a specific groups of pixels (in the form of images), their georeferencing, geometry,
+    coordinate system, and other pertinent information.
+    """
+
     TIMEOUT = (9.5, 30)
-    """User catalog service"""
 
     def __init__(self, url=None, auth=None, metadata=None):
         """The parent Service class implements authentication and exponential
@@ -86,8 +98,8 @@ class Catalog(Service):
         :param str sensor: Name of the sensor used.
         :param str swath: How large an area the sensor captures at a given time.
 
-        :return: ID of created product, for later reference.
-        :rtype: str
+        :return: JSON API representation of the product.
+        :rtype: dict
         """
         for k, v in locals().items():
             if k in ['title', 'description']:
@@ -116,8 +128,7 @@ class Catalog(Service):
                                 why it exists, and what it provides.
 
         :param bool add_namespace: Add your user namespace to the product_id.
-                                   This is only relevant to administrators modifying
-                                   other users products. Defaults to True.
+            This is only relevant to administrators modifying other users products. Defaults to True.
         :param list(str) read: A list of groups, or user hashes to give read access to.
         :param int spectral_bands: Number of spectral bands the product has.
         :param list(str) native_bands: A list of the names of the native bands of this product
@@ -132,8 +143,8 @@ class Catalog(Service):
         :param str sensor: Name of the sensor used.
         :param str swath: How large an area the sensor captures at a given time.
 
-        :return: ID of created product, for later reference.
-        :rtype: str
+        :return: JSON API representation of the product.
+        :rtype: dict
         """
         for k, v in locals().items():
             if k in ['title', 'description']:
@@ -180,7 +191,7 @@ class Catalog(Service):
         :param str sensor: Name of the sensor used.
         :param str swath: How large an area the sensor captures at a given time.
 
-        :return: The updated product document.
+        :return: JSON API representation of the product.
         :rtype: dict
         """
 
@@ -212,11 +223,18 @@ class Catalog(Service):
 
         :param str deletion_task_id: deletion_task ID returned from a call to :meth:`Catalog.remove_product`
                                     with a deletion_token.
+        :return: document with information about product deletion progress.
+        :rtype: dict
         """
         r = self.session.get('/products/deletion_tasks/{}'.format(deletion_task_id))
         return r.json()
 
     def get_band(self, product_id, name, add_namespace=True):
+        """Get a band by name.
+
+        :return: JSON API representation of the band.
+        :rtype: dict
+        """
         if add_namespace:
             product_id = self.namespace_product(product_id)
 
@@ -305,6 +323,9 @@ class Catalog(Service):
         :param float wavelength_min: Minimum wavelength this band is sensitive to.
         :param float wavelength_max: Maximum wavelength this band is sensitive to.
         :param str wavelength_unit: Units the wavelength is expressed in.
+
+        :return: JSON API representation of the band.
+        :rtype: dict
         """
 
         for k, v in locals().items():
@@ -380,6 +401,9 @@ class Catalog(Service):
         :param float wavelength_min: Minimum wavelength this band is sensitive to.
         :param float wavelength_max: Maximum wavelength this band is sensitive to.
         :param str wavelength_unit: Units the wavelength is expressed in.
+
+        :return: JSON API representation of the band.
+        :rtype: dict
         """
 
         for k, v in locals().items():
@@ -443,6 +467,9 @@ class Catalog(Service):
         :param float wavelength_min: Minimum wavelength this band is sensitive to.
         :param float wavelength_max: Maximum wavelength this band is sensitive to.
         :param str wavelength_unit: Units the wavelength is expressed in.
+
+        :return: JSON API representation of the band.
+        :rtype: dict
         """
         if add_namespace:
             product_id = self.namespace_product(product_id)
@@ -455,6 +482,12 @@ class Catalog(Service):
         self.session.delete('/products/{}/bands/{}'.format(product_id, name))
 
     def get_image(self, product_id, image_id, add_namespace=True):
+        """Get a single image metadata entry.
+
+        :return: JSON API representation of the image.
+        :rtype: dict
+        """
+
         if add_namespace:
             product_id = self.namespace_product(product_id)
 
@@ -527,8 +560,11 @@ class Catalog(Service):
         :param str tile_id:
         :param float view_angle:
         :param float view_angle_1:
-        :param dict(string: string|int|float) extra_properties: User defined custom properties for this image.
-                                                                Only 10 keys are allowed.
+        :param dict extra_properties: User defined custom properties for this image.
+                Only 10 keys are allowed. The dict can only map strings to primitive types (str -> str|float|int).
+
+        :return: JSON API representation of the image.
+        :rtype: dict
         """
 
         if add_namespace:
@@ -603,6 +639,9 @@ class Catalog(Service):
         :param str tile_id:
         :param float view_angle:
         :param float view_angle_1:
+
+        :return: JSON API representation of the image.
+        :rtype: dict
         """
 
         if add_namespace:
@@ -681,6 +720,9 @@ class Catalog(Service):
         :param str tile_id:
         :param float view_angle:
         :param float view_angle_1:
+
+        :return: JSON API representation of the image.
+        :rtype: dict
         """
 
         if add_namespace:
@@ -695,10 +737,11 @@ class Catalog(Service):
 
     def upload_image(self, files, product_id, metadata=None, multi=False, image_key=None, **kwargs):
         """Upload an image for a product you own.
+
         :param str|file|list(str)|list(file) files: (Required) a reference to the file to upload.
         :param str product_id: (Required) The id of the product this image belongs to.
         :param dict metadata: Image metadata to use instead of the computed default values.
-        see `add_image` method for allowed keys.
+            see :meth:`Catalog.add_image` for allowed keys.
         """
 
         if metadata is None:
@@ -727,12 +770,16 @@ class Catalog(Service):
             continuation_token=None,
     ):
         """Get result information for debugging your uploads.
+
         :param str product_id: Product ID to get upload results for.
         :param int limit: Number of results to get, useful for paging.
         :param int offset: Start of results to get, useful for paging.
         :param str status: Filter results by status, values are ["SUCCESS", "FAILURE"]
         :param str|int updated: Unix timestamp or ISO8601 formatted date for filtering results updated after this time.
         :param str|int created: Unix timestamp or ISO8601 formatted date for filtering results created after this time.
+
+        :return: A list of upload result objects.
+        :rtype: list
         """
         kwargs = {'limit': limit, 'offset': offset}
         for arg in ['offset', 'status', 'updated', 'created', 'continuation_token']:
@@ -752,10 +799,14 @@ class Catalog(Service):
             created=None,
     ):
         """Get result information for debugging your uploads.
+
         :param str product_id: Product ID to get upload results for.
         :param str status: Filter results by status, values are ["SUCCESS", "FAILURE"]
         :param str|int updated: Unix timestamp or ISO8601 formatted date for filtering results updated after this time.
         :param str|int created: Unix timestamp or ISO8601 formatted date for filtering results created after this time.
+
+        :return: iterator to upload results.
+        :rtype: generator
         """
         continuation_token = None
         kwargs = {}
@@ -772,9 +823,13 @@ class Catalog(Service):
 
     def upload_result(self, product_id, upload_id):
         """Get one upload result with the processing logs.
+
         This is useful for debugging failed uploads.
         :param str product_id: Product ID to get upload result for.
         :param str upload_id: ID of specific upload to get a result record of, includes the run logs.
+
+        :return: One upload result with run logs.
+        :rtype: dict
         """
         result = self.session.get('/products/{}/uploads/{}'.format(product_id, upload_id))
         return result.json()
