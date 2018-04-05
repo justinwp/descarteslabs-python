@@ -48,8 +48,11 @@ class Storage(Service):
         r.raise_for_status()
         return r.content
 
-    def get_upload_url(self, key, storage_type='data'):
-        r = self.session.get('/{storage_type}/new_resumable_url/{key}'.format(storage_type=storage_type, key=key))
+    def get_upload_url(self, key, storage_type='data', **kwargs):
+        r = self.session.get(
+            '/{storage_type}/new_resumable_url/{key}'.format(storage_type=storage_type, key=key),
+            params=kwargs
+        )
         r.raise_for_status()
         return r.content
 
