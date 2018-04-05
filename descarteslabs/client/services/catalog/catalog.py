@@ -45,7 +45,7 @@ class Catalog(Service):
                 "https://platform.descarteslabs.com/metadata/v1/catalog"
             )
 
-        super(Catalog, self).__init__(url, auth)
+        super(Catalog, self).__init__(url, auth=auth)
 
     def namespace_product(self, product_id):
         namespace = self.auth.namespace
