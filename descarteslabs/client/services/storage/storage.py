@@ -41,7 +41,7 @@ class Storage(Service):
 
         self._gcs_upload_service = ThirdPartyService()
 
-        super(Storage, self).__init__(url, auth)
+        super(Storage, self).__init__(url, auth=auth)
 
     def get_signed_url(self, key, storage_type='data'):
         r = self.session.get('/{storage_type}/get_signed_url/{key}'.format(storage_type=storage_type, key=key))
