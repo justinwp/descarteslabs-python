@@ -1,5 +1,9 @@
 import os
+import six
 
+from tempfile import NamedTemporaryFile
+
+import numpy as np
 from requests.exceptions import RequestException
 
 from descarteslabs.client.auth import Auth
@@ -759,6 +763,50 @@ class Catalog(Service):
         if upload[0]:
             raise upload[2]
 
+    def upload_ndarray(
+            self,
+            ndarray,
+            product_id,
+            image_key,
+            proj4=None,
+            wkt_srs=None,
+            geotrans=None,
+            raster_meta=None,
+            **kwargs
+    ):
+        """Upload an ndarray with georeferencing information.
+
+        :param ndarray ndarray: (Required) A numpy ndarray with image data. If you are providing a multi-band image
+            it should have 3 dimensions and the 3rd dimension of the array should index the bands.
+        :param str product_id: (Required) The id of the product this image belongs to.
+        :param str image_key: (Required) The key to use for the resulting image.
+        :param str proj4: (One of proj4 or wkt_srs is required) A proj4 formatted string representing the
+            spatial reference system used by the image.
+        :param str wkt_srs: (One of proj4 or wkt_srs is required) A well known text string representing the
+            spatial reference system used by the image.
+        :param list(float) geotrans: (Required) The 6 number geographic transform of the image. Maps pixel coordinates
+            to coordinates in the specified spatial reference system.
+        :param dict raster_meta: Metadata returned from the :meth:`descarteslabs.client.services.raster.Raster.ndarray`
+            request which generated the initial data for the :param ndarray: being uploaded. Passing :param geotrans:
+            and :param wkt_srs: is unnecessary in this case.
+
+        .. note:: Only one of `proj4` or `wkt_srs` can be provided.
+        """
+        metadata = kwargs
+        metadata.setdefault('process_controls', {}).update({'upload_type': 'ndarray'})
+        if raster_meta is not None:
+            geotrans = raster_meta.get('geoTransform')
+            wkt_srs = raster_meta.get('coordinateSystem', {}).get('wkt')
+        for arg in ['image_key', 'proj4', 'wkt_srs', 'geotrans']:
+            if locals()[arg] is not None:
+                kwargs[arg] = locals()[arg]
+        with NamedTemporaryFile() as tmp:
+            np.save(tmp, ndarray, allow_pickle=False)
+            tmp.seek(0)
+            upload = self._do_upload(tmp.file, product_id, metadata=metadata)
+            if upload[0]:
+                raise upload[2]
+
     def upload_results(
             self,
             product_id,
@@ -781,7 +829,7 @@ class Catalog(Service):
         :return: A list of upload result objects.
         :rtype: list
         """
-        kwargs = {'limit': limit, 'offset': offset}
+        kwargs = {'limit': limit}
         for arg in ['offset', 'status', 'updated', 'created', 'continuation_token']:
             if locals()[arg] is not None:
                 kwargs[arg] = locals()[arg]
@@ -834,23 +882,16 @@ class Catalog(Service):
         result = self.session.get('/products/{}/uploads/{}'.format(product_id, upload_id))
         return result.json()
 
-    def _do_multi_file_upload(self, files, product_id, image_key, metadata=None):
+    def _do_multi_file_upload(self, files, product_id, image_key, metadata):
         file_keys = [os.path.basename(_f) for _f in files]
-        process_controls = (
-            metadata.get('process_controls')
-            if metadata is not None
-            else None
-        )
+        process_controls = metadata.setdefault('process_controls', {'upload_type': 'file'})
         multi_file_args = {
             'multi_file': {
                 'image_files': file_keys,
                 'image_key': image_key,
             }
         }
-        if process_controls is not None:
-            process_controls.update(multi_file_args)
-        else:
-            metadata.update({'process_controls': multi_file_args})
+        process_controls.update(multi_file_args)
         for _file in files:
             upload = self._do_upload(_file, product_id, metadata=metadata)
             if upload[0]:
@@ -866,18 +907,22 @@ class Catalog(Service):
 
         if metadata is None:
             metadata = {}
+        metadata.setdefault('process_controls', {'upload_type': 'file'})
 
-        if os.path.exists(file_ish):
-            fd = open(file_ish, 'rb')
-        elif isinstance(file_ish, file):
-            if not file_ish.mode == 'rb':
+        if isinstance(file_ish, file):
+            if file_ish.mode not in ['rb', 'w+b']:
                 file_ish = open(file_ish.name, 'rb')
             fd = file_ish
+        elif isinstance(file_ish, six.string_types) and os.path.exists(file_ish):
+            fd = open(file_ish, 'rb')
         else:
             return 1, file_ish, Exception('Could not handle file: {}'.format(file_ish))
         try:
             r = self.session.post(
-                '/products/{}/images/upload/{}'.format(product_id, os.path.basename(fd.name)),
+                '/products/{}/images/upload/{}'.format(
+                    product_id,
+                    metadata.pop('image_key', None) or os.path.basename(fd.name)
+                ),
                 json=metadata
             )
             upload_url = r.text
