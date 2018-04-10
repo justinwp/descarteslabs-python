@@ -517,7 +517,7 @@ class Catalog(Service):
         :param float azimuth_angle_1:
         :param list(float) bpp: Average bits of data per pixel.
         :param float bright_fraction: Fraction of the image that has reflectance greater than .4 in the blue band.
-        :param str bucket: Location of image
+        :param str bucket: Name of Google Cloud Bucket. Must be public bucket or Descartes Labs user bucket.
         :param str catalog_id:
         :param float cirrus_fraction: Fraction of pixel which are distorted by cirrus clouds.
         :param float cloud_fraction: Fraction of pixels which are obscured by clouds.
@@ -596,7 +596,7 @@ class Catalog(Service):
         :param float azimuth_angle_1:
         :param list(float) bpp: Average bits of data per pixel.
         :param float bright_fraction: Fraction of the image that has reflectance greater than .4 in the blue band.
-        :param str bucket: Location of image
+        :param str bucket: Name of Google Cloud Bucket. Must be public bucket or Descartes Labs user bucket.
         :param str catalog_id:
         :param float cirrus_fraction: Fraction of pixel which are distorted by cirrus clouds.
         :param float cloud_fraction: Fraction of pixels which are obscured by clouds.
@@ -677,7 +677,7 @@ class Catalog(Service):
         :param float azimuth_angle_1:
         :param list(float) bpp: Average bits of data per pixel.
         :param float bright_fraction: Fraction of the image that has reflectance greater than .4 in the blue band.
-        :param str bucket: Location of image
+        :param str bucket: Name of Google Cloud Bucket. Must be public bucket or Descartes Labs user bucket.
         :param str catalog_id:
         :param float cirrus_fraction: Fraction of pixel which are distorted by cirrus clouds.
         :param float cloud_fraction: Fraction of pixels which are obscured by clouds.
